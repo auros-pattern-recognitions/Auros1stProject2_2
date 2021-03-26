@@ -187,8 +187,6 @@ namespace Auros1stProject2_1
             //
             #region 각 계면에서의 반사, 투과계수 계산
 
-            // degree 를 radian 으로 변환해주는 함수.
-            // double degree2radian(double angle) => ((angle * (PI)) / 180);
             LenData = wavelength_Si.Length;
 
             // 반사계수를 담을 배열.
@@ -286,8 +284,10 @@ namespace Auros1stProject2_1
             // 2021.03.24 이지원. 
             //
             #region 무한등비급수 수렴식 계산
+            double[] MSE = new double[121]; // (1300 - 700) / 5 == 120
+            double[] thicknessArr = new double[121];
 
-            for (int thickness = 350; thickness <= 1000; thickness += 5)
+            for (int thickness = 700; thickness <= 1300; thickness += 5)
             {
                 // 총 반사계수를 저장할 배열 선언.
                 Complex[] Rp = new Complex[LenData],
@@ -313,23 +313,13 @@ namespace Auros1stProject2_1
 
                     // 총 반사계수를 구한다.
 
-                    //Complex E = new Complex(Cos(PhaseThickness2.Real), -Sin(PhaseThickness2.Real));
-                    //Complex E = Complex.Exp(-1 * PhaseThickness * 2.0);
                     Complex E = Complex.Exp(PhaseThickness * new Complex(0, -2.0));
-
-
 
                     Rp[i] = (r01p[i] + r12p[i] * E) /
                             (1 + r01p[i] * r12p[i] * E);
 
                     Rs[i] = (r01s[i] + r12s[i] * E) /
                             (1 + r01s[i] * r12s[i] * E);
-
-                    /*                    Rp[i] = ((1 - Complex.Pow(r01p[i], 2)) * r12p[i] * E) /
-                                                     (1 + r01p[i] * r12p[i] * E);
-
-                                        Rs[i] = ((1 - Complex.Pow(r01s[i], 2)) * r12s[i] * E) /
-                                                (1 + r01s[i] * r12s[i] * E);*/
 
                 }
 
@@ -365,8 +355,6 @@ namespace Auros1stProject2_1
                     double Psi = Atan(rho.Magnitude);
                     double Delta = rho.Phase;
 
-                    //WriteLine(wavelength_exp[i] + "     " + Radian2Degree(Psi));
-                    //WriteLine(Radian2Degree(Delta));
 
                     alpha_cal[i] = (Pow(Tan(Psi), 2.0) - Pow(Tan(polarizerAngle), 2.0)) /
                                            (Pow(Tan(Psi), 2.0) + Pow(Tan(polarizerAngle), 2.0));
@@ -400,16 +388,164 @@ namespace Auros1stProject2_1
                          Pow((alpha_exp[i] - alpha_cal[i]), 2.0) +
                          Pow((beta_exp[i] - beta_cal[i]), 2.0);
                     sum += difference_MSE;
-                    /*
-                                        WriteLine(" " + "alpha_exp : " + alpha_exp[i] + "    alpha_cal : " + alpha_cal[i]);
-                                        WriteLine(" " + "beta_exp : " + beta_exp[i] + "    beta_cal : " + beta_cal[i]);*/
 
                 }
 
-                double MSE = sum / LenData;
-                WriteLine(thickness);
+                int index = (thickness - 700) / 5;
+
+                MSE[index] = sum / LenData;
+                thicknessArr[index] = thickness;
+
+                //WriteLine(MSE);
                 #endregion
             }
+            #region MSE 배열 출력
+
+            /*            foreach (var item in MSE)
+                        {
+                            WriteLine(item);
+                        }*/
+            #endregion
+
+            double[] temp = new double[MSE.Length];
+            for(int i = 0; i < MSE.Length; i++)
+            {
+                temp[i] = MSE[i];
+            }
+
+            Array.Sort(temp);
+            double gap = 5.0;
+            int LoopNum = 0;
+            double globalMin = 0;
+            int IndexofGlobalMin = 0;
+
+
+
+            while (true)
+            {
+                for (int i = 1; i < MSE.Length; i++)
+                {
+                    if ((temp[i] - temp[i - 1]) <= 0.00001)
+                        goto FindGlobalMinimum;
+                }
+
+                int index = 0;
+
+                for (int i = 0; i < MSE.Length; i++)
+                {
+                    temp[i] = MSE[i];
+                }
+
+                Array.Sort(temp);
+
+                globalMin = temp[0];
+
+                // MSE 최소값의 인덱스 검색
+                for (int i = 0; i < MSE.Length; i++)
+                {
+                    if (globalMin == MSE[i])
+                    {
+                        IndexofGlobalMin = i;
+                        break;
+                    }
+                }
+
+
+                // 최소값 인덱스에 맞는 두께를 중심으로 간격을 설정
+                double StartLoop = thicknessArr[IndexofGlobalMin] - gap;
+                double EndLoop = thicknessArr[IndexofGlobalMin] + gap;
+
+                gap = gap / 2;
+
+                int ArraySize = (int)((EndLoop - StartLoop) / gap) + 1;
+                MSE = new double[ArraySize];
+                thicknessArr = new double[ArraySize];
+
+                for ( double thickness = StartLoop; thickness <= EndLoop; thickness += gap)
+                {
+                    // 총 반사계수를 저장할 배열 선언.
+                    Complex[] Rp = new Complex[LenData],
+                              Rs = new Complex[LenData];
+
+                    for (int i = 0; i < LenData; i++)
+                    {
+                        // SiO2의 복소 굴절률.
+                        Complex N_SiO2 = new Complex(n_SiO2[i], -k_SiO2[i]);
+
+                        // air, SiO2 경계면에서의 굴절각을 구한다. (스넬의 법칙)
+                        Complex Sintheta_j = new Complex(Sin((double)AOI_air), 0);
+                        Complex Costheta_j = new Complex(Cos((double)AOI_air), 0);
+                        Complex Sintheta_k = (N_air / N_SiO2) * Sintheta_j;
+                        Complex theta_k = Complex.Asin(Sintheta_k);
+                        // air, SiO2 경계면에서의 굴절각.
+                        Complex Costheta_k = Complex.Cos(theta_k);
+
+                        // 위상 두께를 구한다.
+                        Complex PhaseThickness = ((double)thickness * Math.PI * 2.0 / wavelength_SiO2[i]) * N_SiO2 * Costheta_k;
+
+                        Complex E = Complex.Exp(PhaseThickness * new Complex(0, -2.0));
+
+                        Rp[i] = (r01p[i] + r12p[i] * E) /
+                                (1 + r01p[i] * r12p[i] * E);
+
+                        Rs[i] = (r01s[i] + r12s[i] * E) /
+                                (1 + r01s[i] * r12s[i] * E);
+
+                    }
+
+                    double[] alpha_cal = new double[LenData],
+                             beta_cal = new double[LenData];
+
+                    // Polarizer 오프셋 각.
+                    double polarizerAngle = degree2radian(45.0);
+
+                    for (int i = 0; i < LenData; i++)
+                    {
+                        // 총 반사계수비. (복소반사계수비)
+                        Complex rho = Rp[i] / Rs[i];
+
+                        // Psi, Delta.
+                        double Psi = Atan(rho.Magnitude);
+                        double Delta = rho.Phase;
+
+
+                        alpha_cal[i] = (Pow(Tan(Psi), 2.0) - Pow(Tan(polarizerAngle), 2.0)) /
+                                               (Pow(Tan(Psi), 2.0) + Pow(Tan(polarizerAngle), 2.0));
+
+                        beta_cal[i] = (2.0 * Tan(Psi) * Cos(Delta) * Tan(polarizerAngle)) /
+                                               (Pow(Tan(Psi), 2.0) + Pow(Tan(polarizerAngle), 2.0));
+                    }
+
+                    double sum = 0;
+                    for (int i = 0; i < LenData; i++)
+                    {
+                        double difference_MSE =
+                             Pow((alpha_exp[i] - alpha_cal[i]), 2.0) +
+                             Pow((beta_exp[i] - beta_cal[i]), 2.0);
+                        sum += difference_MSE;
+
+                    }
+
+                    thicknessArr[index] = thickness;
+                    MSE[index] = sum / LenData;
+                    index++;
+                }
+
+                for (int i = 0; i < ArraySize; i++)
+                {
+                    WriteLine($"{thicknessArr[i]}        {MSE[i]}");
+                }
+
+                WriteLine($"============================={LoopNum}=====================================");
+                WriteLine();
+                LoopNum++;
+
+
+
+            }
+            FindGlobalMinimum:
+
+            WriteLine($" MSE가 최저인 두께값{thicknessArr[IndexofGlobalMin]}  MSE가 최저 : {globalMin}");
         }
 
     }
