@@ -177,7 +177,7 @@ namespace Auros1stProject2_1
                       t01p = new Complex[LenData],
                       t01s = new Complex[LenData];
 
-            double AOI_air = degree2radian(65.0);  // 입사각. (라디안) 
+            double AOI_air = degree2radian(65.0);   // 입사각. (라디안) 
             Complex N_air = new Complex(1.0, 0);    // 공기의 굴절률.
 
             // 반사, 투과계수를 계산한다.
@@ -210,11 +210,11 @@ namespace Auros1stProject2_1
                                ((N_air * Costheta_j) + (N_SiO2 * Costheta_k));
 
                 // SiO2, Si 경계면에서의 굴절각을 구한다. (스넬의 법칙)
-                Sintheta_j = Complex.Sin(theta_k);
-                Costheta_j = Complex.Cos(theta_k);
-                Sintheta_k = (N_SiO2 / N_Si) * Sintheta_j;
-                theta_k = Complex.Asin(Sintheta_k);
-                Costheta_k = Complex.Cos(theta_k);
+                Sintheta_j  = Complex.Sin(theta_k);
+                Costheta_j  = Complex.Cos(theta_k);
+                Sintheta_k  = (N_SiO2 / N_Si) * Sintheta_j;
+                theta_k     = Complex.Asin(Sintheta_k);         // SiO2, Si 경계면에서의 굴절각.
+                Costheta_k  = Complex.Cos(theta_k);
 
                 // SiO2, Si 경계면에서의 반사계수를 구한다.
                 r12p[i] = ((N_Si * Costheta_j) - (N_SiO2 * Costheta_k)) /
@@ -263,13 +263,13 @@ namespace Auros1stProject2_1
             #region 총 반사계수를 구한다.
 
             // 두께 범위와 두께 간격을 설정한다.
-            double StartThickness = 700.0;
-            double EndThickness = 1300.0;
-            double gap = 6.0;
+            double StartThickness   = 700.0;
+            double EndThickness     = 1300.0;
+            double gap              = 6.0;
 
             // MSE 와 두께를 담을 배열을 선언, 초기화한다.
             double numMSE = (EndThickness - StartThickness) / gap + 1;
-            double[] MSEs = new double[(int)numMSE];
+            double[] MSEs        = new double[(int)numMSE];
             double[] thicknesses = new double[(int)numMSE];
 
             // 두께별 MSE 를 계산해서 MSEs 배열에 저장한다.
@@ -325,7 +325,7 @@ namespace Auros1stProject2_1
 
                 // alpha, beta 이론값을 담을 배열 선언.
                 double[] alpha_cal = new double[LenData],
-                         beta_cal = new double[LenData];
+                         beta_cal  = new double[LenData];
 
                 // Polarizer 오프셋 각.
                 double polarizerAngle = degree2radian(45.0);
@@ -374,10 +374,10 @@ namespace Auros1stProject2_1
 
                 }
 
-                MSEs[idx] = sum / LenData;
+                MSEs[idx]        = sum / LenData;
                 thicknesses[idx] = thickness;
-                ++idx;
 
+                ++idx;
                 #endregion
             }
             #region MSE 배열 출력
@@ -436,14 +436,14 @@ namespace Auros1stProject2_1
                 WriteLine($"==== {cnt} 회차 ====");
 
                 // 두께 범위와 두께 간격을 정한다. 
-                StartThickness = d0 - gap;
-                EndThickness = d0 + gap;
-                gap = gap * 0.7;
+                StartThickness  = d0 - gap;
+                EndThickness    = d0 + gap;
+                gap             = gap * 0.7;
 
                 // MSEs 배열을 초기화한다.
                 // double minus = EndThickness - StartThickness;
                 numMSE = (EndThickness - StartThickness) / gap + 1;
-                MSEs = new double[(int)numMSE];
+                MSEs        = new double[(int)numMSE];
                 thicknesses = new double[(int)numMSE];
 
                 // 새로 지정된 두께 범위에서 MSE 값들을 계산한다.
@@ -461,11 +461,10 @@ namespace Auros1stProject2_1
                         Complex N_SiO2 = new Complex(n_SiO2[i], -k_SiO2[i]);
 
                         // air, SiO2 경계면에서의 굴절각을 구한다. (스넬의 법칙)
-                        Complex Sintheta_j = new Complex(Sin((double)AOI_air), 0);
-                        Complex Sintheta_k = (N_air / N_SiO2) * Sintheta_j;
-                        Complex theta_k = Complex.Asin(Sintheta_k);
-                        // air, SiO2 경계면에서의 굴절각.
-                        Complex Costheta_k = Complex.Cos(theta_k);
+                        Complex Sintheta_j  = new Complex(Sin((double)AOI_air), 0);
+                        Complex Sintheta_k  = (N_air / N_SiO2) * Sintheta_j;
+                        Complex theta_k     = Complex.Asin(Sintheta_k);      // air, SiO2 경계면에서의 굴절각.
+                        Complex Costheta_k  = Complex.Cos(theta_k);
 
                         // 위상 두께를 구한다.
                         Complex PhaseThickness = ((double)thickness * Math.PI * 2.0 / wavelength_SiO2[i]) * N_SiO2 * Costheta_k;
@@ -486,7 +485,7 @@ namespace Auros1stProject2_1
                     #region 총 반사계수로부터 alpha, beta 를 계산한다.
                     // alpha, beta 이론값을 담을 배열 선언.
                     double[] alpha_cal = new double[LenData],
-                             beta_cal = new double[LenData];
+                             beta_cal  = new double[LenData];
 
                     // Polarizer 오프셋 각.
                     double polarizerAngle = degree2radian(45.0);
@@ -497,14 +496,14 @@ namespace Auros1stProject2_1
                         Complex rho = Rp[i] / Rs[i];
 
                         // Psi, Delta.
-                        double Psi = Atan(rho.Magnitude);
+                        double Psi   = Atan(rho.Magnitude);
                         double Delta = rho.Phase;
 
 
                         alpha_cal[i] = (Pow(Tan(Psi), 2.0) - Pow(Tan(polarizerAngle), 2.0)) /
                                                (Pow(Tan(Psi), 2.0) + Pow(Tan(polarizerAngle), 2.0));
 
-                        beta_cal[i] = (2.0 * Tan(Psi) * Cos(Delta) * Tan(polarizerAngle)) /
+                        beta_cal[i]  = (2.0 * Tan(Psi) * Cos(Delta) * Tan(polarizerAngle)) /
                                                (Pow(Tan(Psi), 2.0) + Pow(Tan(polarizerAngle), 2.0));
                     }
                     #endregion
@@ -520,7 +519,7 @@ namespace Auros1stProject2_1
 
                     }
 
-                    MSEs[idx] = sum / LenData;
+                    MSEs[idx]        = sum / LenData;
                     thicknesses[idx] = thickness;
                     ++idx;
 
@@ -532,7 +531,7 @@ namespace Auros1stProject2_1
 
                 // global minimum 에서의 MSE, 두께 값을 구한다.
                 idxGlobalMinimum = 0;               // global minimum 에서의 index.
-                GlobalMinimum = MSEs.Min();      // global minimum 값.
+                GlobalMinimum    = MSEs.Min();      // global minimum 값.
 
                 // global minimum 에서의 index 를 찾는다.
                 LenData = MSEs.Length;
