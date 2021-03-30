@@ -265,7 +265,7 @@ namespace Auros1stProject2_1
             // 두께 범위와 두께 간격을 설정한다.
             double StartThickness   = 700.0;
             double EndThickness     = 1300.0;
-            double gap              = 6.0;
+            double gap              = 5.0;
 
             // MSE 와 두께를 담을 배열을 선언, 초기화한다.
             double numMSE = (EndThickness - StartThickness) / gap + 1;
