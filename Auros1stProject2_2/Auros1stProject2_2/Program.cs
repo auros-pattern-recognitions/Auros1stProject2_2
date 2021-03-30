@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -439,6 +440,10 @@ namespace Auros1stProject2_1
             gap = 10.0;
             nowD0 += gap;
 
+            // global minimum 을 찾는 시간을 측정한다.
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             int cnt = 0;    // global minimum 을 찾기 위한 연산의 반복 횟수.
             while (true)
             {
@@ -528,7 +533,7 @@ namespace Auros1stProject2_1
                     $"nowMSE: {nowMSE}");
 
                 // 두 MSE 의 차이가 0.00001(10^-5) 이하이면 while 문을 탈출한다.
-                if(Abs(preMSE - nowMSE) <= 0.00001)
+                if (Abs(preMSE - nowMSE) <= 0.00001)
                 {
                     // global minimum 은 둘 중 작은 MSE 로 정한다.
                     GlobalMinimum   = (preMSE < nowMSE) ? preMSE : nowMSE;
@@ -550,6 +555,8 @@ namespace Auros1stProject2_1
             }
 
             Find_d_sol: WriteLine($"d_sol: {d_sol}    MSE: {MSEs[idxGlobalMinimum]}    idxGlobalMinimum: {idxGlobalMinimum}");
+            stopwatch.Stop();
+            WriteLine($"소요 시간: {stopwatch.ElapsedMilliseconds}ms");
 
             #endregion
 
