@@ -438,7 +438,7 @@ namespace Auros1stProject2_1
                 // 두께 범위와 두께 간격을 정한다. 
                 StartThickness  = d0 - gap;
                 EndThickness    = d0 + gap;
-                gap             = gap * 0.7;
+                gap             = gap * 0.9;
 
                 // MSEs 배열을 초기화한다.
                 // double minus = EndThickness - StartThickness;
@@ -451,6 +451,9 @@ namespace Auros1stProject2_1
                 for (double thickness = StartThickness; thickness <= EndThickness; thickness += gap)
                 {
                     #region 총 반사계수를 구한다.
+
+                    LenData = wavelength_Si.Length;
+
                     // 총 반사계수를 저장할 배열 선언.
                     Complex[] Rp = new Complex[LenData],
                               Rs = new Complex[LenData];
@@ -548,7 +551,6 @@ namespace Auros1stProject2_1
 
 
                 // MSE 값의 간격을 확인한다.
-                // 1. 양 옆.
                 for (int i = 1; i < LenData; i++)
                 {
                     // MSE 의 변화율이 10^-5 이하이면 while 문을 탈출한다.
@@ -558,18 +560,6 @@ namespace Auros1stProject2_1
                         goto Find_d_sol;
                     }
                 }
-
-                // 2. global minimum 끼리 비교.
-                /*for (int i = 1; i < LenData; i++)
-                {
-                    // MSE 의 변화율이 10^-5 이하이면 while 문을 탈출한다.
-                    if (Math.Abs((beforeGM - GlobalMinimum)) <= 0.00001)
-                    {
-                        d_sol = d0;
-                        goto Find_d_sol;
-                    }
-                }
-                beforeGM = GlobalMinimum;*/
 
             }
             Find_d_sol: WriteLine($"d_sol: {d_sol}    MSE: {MSEs[idxGlobalMinimum]}    idxGlobalMinimum: {idxGlobalMinimum}");
