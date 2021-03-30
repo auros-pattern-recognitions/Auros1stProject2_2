@@ -210,11 +210,11 @@ namespace Auros1stProject2_1
                                ((N_air * Costheta_j) + (N_SiO2 * Costheta_k));
 
                 // SiO2, Si 경계면에서의 굴절각을 구한다. (스넬의 법칙)
-                Sintheta_j  = Complex.Sin(theta_k);
-                Costheta_j  = Complex.Cos(theta_k);
-                Sintheta_k  = (N_SiO2 / N_Si) * Sintheta_j;
-                theta_k     = Complex.Asin(Sintheta_k);         // SiO2, Si 경계면에서의 굴절각.
-                Costheta_k  = Complex.Cos(theta_k);
+                Sintheta_j = Complex.Sin(theta_k);
+                Costheta_j = Complex.Cos(theta_k);
+                Sintheta_k = (N_SiO2 / N_Si) * Sintheta_j;
+                theta_k = Complex.Asin(Sintheta_k);         // SiO2, Si 경계면에서의 굴절각.
+                Costheta_k = Complex.Cos(theta_k);
 
                 // SiO2, Si 경계면에서의 반사계수를 구한다.
                 r12p[i] = ((N_Si * Costheta_j) - (N_SiO2 * Costheta_k)) /
@@ -263,13 +263,13 @@ namespace Auros1stProject2_1
             #region 총 반사계수를 구한다.
 
             // 두께 범위와 두께 간격을 설정한다.
-            double StartThickness   = 700.0;
-            double EndThickness     = 1300.0;
-            double gap              = 6.0;
+            double StartThickness = 700.0;
+            double EndThickness = 1300.0;
+            double gap = 6.0;
 
             // MSE 와 두께를 담을 배열을 선언, 초기화한다.
             double numMSE = (EndThickness - StartThickness) / gap + 1;
-            double[] MSEs        = new double[(int)numMSE];
+            double[] MSEs = new double[(int)numMSE];
             double[] thicknesses = new double[(int)numMSE];
 
             // 두께별 MSE 를 계산해서 MSEs 배열에 저장한다.
@@ -325,7 +325,7 @@ namespace Auros1stProject2_1
 
                 // alpha, beta 이론값을 담을 배열 선언.
                 double[] alpha_cal = new double[LenData],
-                         beta_cal  = new double[LenData];
+                         beta_cal = new double[LenData];
 
                 // Polarizer 오프셋 각.
                 double polarizerAngle = degree2radian(45.0);
@@ -374,7 +374,7 @@ namespace Auros1stProject2_1
 
                 }
 
-                MSEs[idx]        = sum / LenData;
+                MSEs[idx] = sum / LenData;
                 thicknesses[idx] = thickness;
 
                 ++idx;
@@ -415,7 +415,7 @@ namespace Auros1stProject2_1
             // WriteLine($"{MSEs[idxGlobalMinimum]}  {idxGlobalMinimum}");
 
             // global minimum 에서의 두께 값.
-            double d0 = thicknesses[idxGlobalMinimum];
+            double nowD0 = thicknesses[idxGlobalMinimum];
 
             #endregion
 
@@ -427,151 +427,128 @@ namespace Auros1stProject2_1
             //
             #region 두께 범위를 재설정하고 MSE를 구한다.
 
-            double d_sol = 0.0; // "실제" global minimum 이 되는 두께.
-            int cnt = 0;        // global minimum 을 찾기 위한 연산 반복 횟수.
-            //double beforeGM = GlobalMinimum;
+            double d_sol = 0.0;             // "실제" global minimum 이 되는 두께.
+
+            // 이전 값을 가져야하는 변수에 현재 값을 초기화 해둔다.
+            double preD0 = nowD0,           // 이전 두께를 저장하는 변수.
+                   tempD0 = 0.0;
+            double preMSE = GlobalMinimum,  // 이전 MSE 를 저장하는 변수.
+                   nowMSE = GlobalMinimum;  // 현재 MSE 를 저장하는 변수.
+
+            // 두께 간격, 현재 두께를 갱신한다.
+            gap = 10.0;
+            nowD0 += gap;
+
+            int cnt = 0;    // global minimum 을 찾기 위한 연산의 반복 횟수.
             while (true)
             {
                 ++cnt;
                 WriteLine($"==== {cnt} 회차 ====");
 
-                // 두께 범위와 두께 간격을 정한다. 
-                StartThickness  = d0 - gap;
-                EndThickness    = d0 + gap;
-                gap             = gap * 0.7;
+                #region 총 반사계수를 구한다.
 
-                // MSEs 배열을 초기화한다.
-                // double minus = EndThickness - StartThickness;
-                numMSE = (EndThickness - StartThickness) / gap + 1;
-                MSEs        = new double[(int)numMSE];
-                thicknesses = new double[(int)numMSE];
+                // 총 반사계수, alpha/beta 는 "각 파장마다 계산"하게 된다.
+                // 각 파장마다의 계산 값을 구하기 위한 반복문의 "반복 횟수 변수를 선언"한다.
+                LenData = wavelength_Si.Length;
 
-                // 새로 지정된 두께 범위에서 MSE 값들을 계산한다.
-                idx = 0;
-                for (double thickness = StartThickness; thickness <= EndThickness; thickness += gap)
-                {
-                    #region 총 반사계수를 구한다.
-                    // 총 반사계수를 저장할 배열 선언.
-                    Complex[] Rp = new Complex[LenData],
-                              Rs = new Complex[LenData];
+                // 총 반사계수를 저장할 변수 선언.
+                Complex[] Rp = new Complex[LenData],   // 현재 총 반사계수 변수.
+                          Rs = new Complex[LenData];
 
-                    for (int i = 0; i < LenData; i++)
-                    {
-                        // SiO2의 복소 굴절률.
-                        Complex N_SiO2 = new Complex(n_SiO2[i], -k_SiO2[i]);
-
-                        // air, SiO2 경계면에서의 굴절각을 구한다. (스넬의 법칙)
-                        Complex Sintheta_j  = new Complex(Sin((double)AOI_air), 0);
-                        Complex Sintheta_k  = (N_air / N_SiO2) * Sintheta_j;
-                        Complex theta_k     = Complex.Asin(Sintheta_k);      // air, SiO2 경계면에서의 굴절각.
-                        Complex Costheta_k  = Complex.Cos(theta_k);
-
-                        // 위상 두께를 구한다.
-                        Complex PhaseThickness = ((double)thickness * Math.PI * 2.0 / wavelength_SiO2[i]) * N_SiO2 * Costheta_k;
-
-                        //WriteLine(PhaseThickness);
-
-                        // 총 반사계수를 구한다.
-                        Complex E = Complex.Exp(PhaseThickness * new Complex(0, -2.0));
-
-                        Rp[i] = (r01p[i] + r12p[i] * E) /
-                                (1 + r01p[i] * r12p[i] * E);
-
-                        Rs[i] = (r01s[i] + r12s[i] * E) /
-                                (1 + r01s[i] * r12s[i] * E);
-
-                    }
-                    #endregion
-                    #region 총 반사계수로부터 alpha, beta 를 계산한다.
-                    // alpha, beta 이론값을 담을 배열 선언.
-                    double[] alpha_cal = new double[LenData],
-                             beta_cal  = new double[LenData];
-
-                    // Polarizer 오프셋 각.
-                    double polarizerAngle = degree2radian(45.0);
-
-                    for (int i = 0; i < LenData; i++)
-                    {
-                        // 총 반사계수비. (복소반사계수비)
-                        Complex rho = Rp[i] / Rs[i];
-
-                        // Psi, Delta.
-                        double Psi   = Atan(rho.Magnitude);
-                        double Delta = rho.Phase;
-
-
-                        alpha_cal[i] = (Pow(Tan(Psi), 2.0) - Pow(Tan(polarizerAngle), 2.0)) /
-                                               (Pow(Tan(Psi), 2.0) + Pow(Tan(polarizerAngle), 2.0));
-
-                        beta_cal[i]  = (2.0 * Tan(Psi) * Cos(Delta) * Tan(polarizerAngle)) /
-                                               (Pow(Tan(Psi), 2.0) + Pow(Tan(polarizerAngle), 2.0));
-                    }
-                    #endregion
-                    #region MSE 를 계산한다.
-
-                    double sum = 0;
-                    for (int i = 0; i < LenData; i++)
-                    {
-                        double difference_MSE =
-                             Pow((alpha_exp[i] - alpha_cal[i]), 2.0) +
-                             Pow((beta_exp[i] - beta_cal[i]), 2.0);
-                        sum += difference_MSE;
-
-                    }
-
-                    MSEs[idx]        = sum / LenData;
-                    thicknesses[idx] = thickness;
-                    ++idx;
-
-                    #endregion
-                }
-                // MSEs 출력.
-                foreach (var item in MSEs)
-                    WriteLine(item);
-
-                // global minimum 에서의 MSE, 두께 값을 구한다.
-                idxGlobalMinimum = 0;               // global minimum 에서의 index.
-                GlobalMinimum    = MSEs.Min();      // global minimum 값.
-
-                // global minimum 에서의 index 를 찾는다.
-                LenData = MSEs.Length;
                 for (int i = 0; i < LenData; i++)
                 {
-                    if (MSEs[i] == GlobalMinimum)
-                    {
-                        idxGlobalMinimum = i;
-                        break;
-                    }
+                    // SiO2의 복소 굴절률.
+                    Complex N_SiO2 = new Complex(n_SiO2[i], -k_SiO2[i]);
+
+                    // air, SiO2 경계면에서의 굴절각을 구한다. (스넬의 법칙)
+                    Complex Sintheta_j = new Complex(Sin((double)AOI_air), 0);
+                    Complex Sintheta_k = (N_air / N_SiO2) * Sintheta_j;
+                    Complex theta_k = Complex.Asin(Sintheta_k);         // air, SiO2 경계면에서의 굴절각.
+                    Complex Costheta_k = Complex.Cos(theta_k);
+
+                    // 위상 두께를 구한다.
+                    Complex prePhaseThickness = ((double)preD0 * Math.PI * 2.0 / wavelength_SiO2[i]) * N_SiO2 * Costheta_k;
+                    Complex PhaseThickness = ((double)nowD0 * Math.PI * 2.0 / wavelength_SiO2[i]) * N_SiO2 * Costheta_k;
+
+                    //WriteLine(prePhaseThickness);
+                    //WriteLine(PhaseThickness);
+
+                    // 총 반사계수를 구한다.
+                    Complex E = Complex.Exp(PhaseThickness * new Complex(0, -2.0));
+
+                    Rp[i] = (r01p[i] + r12p[i] * E) /
+                            (1 + r01p[i] * r12p[i] * E);
+
+                    Rs[i] = (r01s[i] + r12s[i] * E) /
+                            (1 + r01s[i] * r12s[i] * E);
                 }
 
-                d0 = thicknesses[idxGlobalMinimum]; // global minimum 에서의 두께 값.
+                #endregion
+                #region 총 반사계수로부터 alpha, beta 를 구한다.
 
+                // alpha, beta 이론값을 담을 배열 선언.
+                double[] alpha_cal = new double[LenData],
+                         beta_cal = new double[LenData];
 
-                // MSE 값의 간격을 확인한다.
-                // 1. 양 옆.
-                for (int i = 1; i < LenData; i++)
+                // Polarizer 오프셋 각.
+                double polarizerAngle = degree2radian(45.0);
+
+                for (int i = 0; i < LenData; i++)
                 {
-                    // MSE 의 변화율이 10^-5 이하이면 while 문을 탈출한다.
-                    if (Math.Abs((MSEs[i] - MSEs[i - 1])) <= 0.00001)
-                    {
-                        d_sol = d0;
-                        goto Find_d_sol;
-                    }
+                    // 총 반사계수비. (복소반사계수비)
+                    Complex rho = Rp[i] / Rs[i];
+
+                    // Psi, Delta.
+                    double Psi = Atan(rho.Magnitude);
+                    double Delta = rho.Phase;
+
+                    alpha_cal[i] = (Pow(Tan(Psi), 2.0) - Pow(Tan(polarizerAngle), 2.0)) /
+                                           (Pow(Tan(Psi), 2.0) + Pow(Tan(polarizerAngle), 2.0));
+
+                    beta_cal[i] = (2.0 * Tan(Psi) * Cos(Delta) * Tan(polarizerAngle)) /
+                                           (Pow(Tan(Psi), 2.0) + Pow(Tan(polarizerAngle), 2.0));
                 }
 
-                // 2. global minimum 끼리 비교.
-                /*for (int i = 1; i < LenData; i++)
+                #endregion
+                #region MSE 를 계산한다.
+
+                double sum = 0;
+                for (int i = 0; i < LenData; i++)
                 {
-                    // MSE 의 변화율이 10^-5 이하이면 while 문을 탈출한다.
-                    if (Math.Abs((beforeGM - GlobalMinimum)) <= 0.00001)
-                    {
-                        d_sol = d0;
-                        goto Find_d_sol;
-                    }
+                    double difference_MSE =
+                         Pow((alpha_exp[i] - alpha_cal[i]), 2.0) +
+                         Pow((beta_exp[i] - beta_cal[i]), 2.0);
+                    sum += difference_MSE;
                 }
-                beforeGM = GlobalMinimum;*/
 
+                // 이전 MSE, 현재 MSE 를 갱신한다.
+                preMSE = nowMSE;
+                nowMSE = sum / LenData;
+                WriteLine($"preMSE: {preMSE}\n" +
+                    $"nowMSE: {nowMSE}");
+
+                // 두 MSE 의 차이가 0.00001(10^-5) 이하이면 while 문을 탈출한다.
+                if(Abs(preMSE - nowMSE) <= 0.00001)
+                {
+                    // global minimum 은 둘 중 작은 MSE 로 정한다.
+                    GlobalMinimum   = (preMSE < nowMSE) ? preMSE : nowMSE;
+                    // 실제 두께는 global minimum 으로 정해진 MSE 와 짝이 되는 두께이다.
+                    d_sol           = (preMSE == GlobalMinimum) ? preD0 : nowD0;
+                    goto Find_d_sol;
+                }
+
+                // 이전 두께를 임시로 저장해두고 두께 간격을 갱신한다.
+                tempD0 = nowD0;
+                gap *= 0.9;
+
+                // 기울기가 (-) 이면 x 축 값(두께)을 gap 만큼 더해주고,
+                // 기울기가 (+) 이면 x 축 값(두께)을 gap 만큼 빼준다.
+                nowD0 += ((preMSE - nowMSE) / (preD0 - nowD0) < 0) ? gap : -gap;
+                preD0 = nowD0;
+
+                #endregion
             }
+
             Find_d_sol: WriteLine($"d_sol: {d_sol}    MSE: {MSEs[idxGlobalMinimum]}    idxGlobalMinimum: {idxGlobalMinimum}");
 
             #endregion
